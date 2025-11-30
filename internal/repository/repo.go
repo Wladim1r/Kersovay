@@ -110,9 +110,9 @@ func (db *userDB) ShowOneBook(title string) error {
 func localShow(book models.Book) {
 	fmt.Println("📚------------------------------------📚")
 	fmt.Printf("📖 КНИГА №%d\n", book.ID)
-	fmt.Printf("  📝 Название: %s\n", book.Title)
-	fmt.Printf("  ✍️ Автор: %s\n", book.Author)
-	fmt.Printf("  🗓️ Год издания: %d\n", book.Year)
-	fmt.Printf("  💰 Цена (в рублях): %d\n", book.Price)
-	fmt.Println("📚------------------------------------📚\n")
+	fmt.Printf("📝 Название: %s\n", book.Title)
+	fmt.Printf(" ✍️ Автор: %s\n", book.Author)
+	fmt.Printf("🗓️ Год издания: %d\n", book.Year)
+	fmt.Printf("💰 Цена (в рублях): %d\n", book.Price)
+	fmt.Printf("📚------------------------------------📚\n\n")
 }
