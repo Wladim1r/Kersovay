@@ -1,5 +1,5 @@
-// Package database
-package database
+// Package db
+package db
 
 import (
 	"database/sql"

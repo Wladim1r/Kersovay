@@ -10,7 +10,11 @@ import (
 	"time"
 )
 
-func GetInt(someone string) int {
+const (
+	WithoutChange = "оставьте поле пустым, если не хотите ничего менять"
+)
+
+func GetInt(someone string, empty bool) int {
 	for {
 		ui := bufio.NewReader(os.Stdin)
 		str, err := ui.ReadString(NewLine)
@@ -19,6 +23,10 @@ func GetInt(someone string) int {
 			continue
 		}
 		str = strings.TrimSpace(str)
+
+		if empty && str == "" {
+			return 0
+		}
 
 		number, err := strconv.Atoi(str)
 		if err != nil {
@@ -32,7 +40,7 @@ func GetInt(someone string) int {
 		}
 
 		if someone == "year" && number > time.Now().Year() {
-			fmt.Printf("Указанный вами год не совпадает с текущим\nПопробуйте еще раз: ")
+			fmt.Printf("Указанный вами год превышает текущий\nПопробуйте еще раз: ")
 			continue
 		}
 
@@ -40,7 +48,7 @@ func GetInt(someone string) int {
 	}
 }
 
-func GetString() string {
+func GetString(empty bool) string {
 	for {
 		ui := bufio.NewReader(os.Stdin)
 		str, err := ui.ReadString(NewLine)
@@ -51,10 +59,17 @@ func GetString() string {
 		str = strings.TrimSpace(str)
 
 		if len(str) == 0 {
+			if empty {
+				return ""
+			}
+
 			fmt.Printf("Поле не может оставаться пустым\nПопробуйте еще раз: ")
 			continue
 		}
 
-		return str
+		if len(str) > 0 {
+			return str
+		}
+
 	}
 }
