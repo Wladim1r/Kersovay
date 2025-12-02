@@ -9,6 +9,7 @@ import (
 	"library/utils"
 	"os"
 	"os/exec"
+	"time"
 )
 
 func main() {
@@ -119,6 +120,7 @@ func main() {
 			}
 		case 6:
 			fmt.Println("Bye-bye 👋")
+			time.Sleep(3 * time.Second)
 			return
 		}
 	}
