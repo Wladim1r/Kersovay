@@ -84,8 +84,6 @@ func main() {
 				continue
 			}
 		case 5:
-			withoutChange := utils.WithoutChange
-
 			fmt.Printf("\nЭтап обновления книги из списка\n")
 			fmt.Print(
 				"Введите название той книги, которую хотите обновить: ",
@@ -96,6 +94,8 @@ func main() {
 				fmt.Println(err.Error())
 				continue
 			}
+
+			withoutChange := utils.WithoutChange
 
 			fmt.Printf("➡️ Введите новое название книги\n(%s): ", withoutChange)
 			newTitle := utils.GetString(true)
