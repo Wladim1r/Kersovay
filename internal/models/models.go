@@ -2,11 +2,11 @@
 package models
 
 type Book struct {
-	ID     int    `json:"id"`
-	Title  string `json:"title"`
-	Author string `json:"author"`
-	Year   int    `json:"year"`
-	Price  int    `json:"price"`
+	ID     int
+	Title  string
+	Author string
+	Year   int
+	Price  int
 }
 
 func NewBook(title, author string, year, price int) Book {

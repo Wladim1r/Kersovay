@@ -26,9 +26,15 @@ func NewBookRepo(db *sql.DB) BookRepository {
 }
 
 func (br *bookRepository) CreateTable() error {
-	_, err := br.db.Exec(
-		"CREATE TABLE IF NOT EXISTS books (id INTEGER PRIMARY KEY, title TEXT, author TEXT, year INTEGER, price INTEGER)",
-	)
+	_, err := br.db.Exec(`
+		CREATE TABLE IF NOT EXISTS books (
+			id INTEGER PRIMARY KEY,
+			title TEXT NOT NULL,
+			author TEXT NOT NULL,
+			year INTEGER,
+			price INTEGER,
+			UNIQUE(title, author)
+		);`)
 
 	if err != nil {
 		return fmt.Errorf("❌ не удалось создать базу данных: %w", err)
@@ -50,7 +56,7 @@ func (br *bookRepository) CreateBook(book models.Book) error {
 }
 
 func (br *bookRepository) ShowAllBooks() (*sql.Rows, error) {
-	query := "SELECT * FROM books"
+	query := "SELECT * FROM books ORDER BY title ASC"
 
 	rows, err := br.db.Query(query)
 	if err != nil {
@@ -63,7 +69,9 @@ func (br *bookRepository) ShowAllBooks() (*sql.Rows, error) {
 func (br *bookRepository) ShowOneBook(title string) (*models.Book, error) {
 	book := new(models.Book)
 
-	row := br.db.QueryRow("SELECT * FROM books WHERE title = ?", title)
+	query := "%" + title + "%"
+
+	row := br.db.QueryRow("SELECT * FROM books WHERE title LIKE ?", query)
 
 	err := row.Scan(&book.ID, &book.Title, &book.Author, &book.Year, &book.Price)
 
@@ -96,7 +104,7 @@ func (br *bookRepository) UpdateBook(title string, book models.Book) error {
 	}
 
 	if len(updates) == 0 {
-		return nil // Нет полей для обновления
+		return nil // нет полей для обновления
 	}
 
 	query := fmt.Sprintf("UPDATE books SET %s WHERE title = ?", strings.Join(updates, ", "))

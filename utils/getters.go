@@ -67,9 +67,6 @@ func GetString(empty bool) string {
 			continue
 		}
 
-		if len(str) > 0 {
-			return str
-		}
-
+		return str
 	}
 }

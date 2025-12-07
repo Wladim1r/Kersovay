@@ -79,15 +79,19 @@ func main() {
 			fmt.Printf("\nЭтап удаления книги из списка 🚮\n")
 			fmt.Print("🔍 Введите название той книги, которую хотите удалить из списка: ")
 			title := utils.GetString(false)
+
+			if err := handler.ShowOneBook(title); err != nil {
+				fmt.Println(err.Error())
+				continue
+			}
+
 			if err := handler.DeleteBook(title); err != nil {
 				fmt.Println(err.Error())
 				continue
 			}
 		case 5:
 			fmt.Printf("\nЭтап обновления книги из списка\n")
-			fmt.Print(
-				"Введите название той книги, которую хотите обновить: ",
-			)
+			fmt.Print("Введите название той книги, которую хотите обновить: ")
 			title := utils.GetString(false)
 
 			if err := handler.ShowOneBook(title); err != nil {

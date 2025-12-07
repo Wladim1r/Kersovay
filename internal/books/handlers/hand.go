@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"library/internal/books/repository"
 	"library/internal/models"
+	"strings"
 )
 
 type bookHandler struct {
@@ -21,6 +22,10 @@ func NewHandler(r repository.BookRepository) *bookHandler {
 
 func (h *bookHandler) CreateBook(book models.Book) error {
 	if err := h.r.CreateBook(book); err != nil {
+		if strings.Contains(err.Error(), "UNIQUE constraint failed") {
+			return fmt.Errorf("❌ такая книга уже существует: %w", err)
+		}
+
 		return fmt.Errorf("❌ не удалось создать книгу: %w", err)
 	}
 
@@ -88,10 +93,11 @@ func (h *bookHandler) DeleteBook(title string) error {
 
 func localShow(book models.Book) {
 	fmt.Printf("📚------------------📚\n")
-	fmt.Printf("|    📖 КНИГА №%d    |\n", book.ID)
+	fmt.Printf("|    📖 КНИГА №%d    \n", book.ID)
 	fmt.Printf("+-------------------+\n")
 	fmt.Printf("| 📝 Название: %s\n", book.Title)
 	fmt.Printf("| ✍️ Автор: %s\n", book.Author)
 	fmt.Printf("| 🗓️ Год издания: %d\n", book.Year)
 	fmt.Printf("| 💰 Цена (в рублях): %d\n\n\n", book.Price)
+	fmt.Printf("📚-------------------+\n")
 }
