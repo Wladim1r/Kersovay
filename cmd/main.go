@@ -70,9 +70,9 @@ authMenu:
 
 		case 2:
 			fmt.Printf("\n📝 РЕГИСТРАЦИЯ\n\n")
-			fmt.Print("Имя пользователя (минимум 3 символа): ")
+			fmt.Print("Имя пользователя: ")
 			username := utils.GetString(false)
-			fmt.Print("Пароль (минимум 6 символов): ")
+			fmt.Print("Пароль: ")
 			password := utils.GetString(false)
 
 			if err := authHandler.Register(username, password); err != nil {
