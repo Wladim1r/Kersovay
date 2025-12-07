@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	authHandlers "library/internal/auth/handlers"
+	authRepo "library/internal/auth/repository"
 	"library/internal/books/handlers"
 	"library/internal/books/repository"
 	"library/internal/db"
@@ -13,40 +15,115 @@ import (
 )
 
 func main() {
-	db := db.MustLoad()
-	repo := repository.NewBookRepo(db)
-	if err := repo.CreateTable(); err != nil {
+	database := db.MustLoad()
+	defer database.Close()
+
+	authRepository := authRepo.NewAuthRepo(database)
+	bookRepo := repository.NewBookRepo(database)
+
+	if err := authRepository.CreateUserTable(); err != nil {
 		fmt.Println(err.Error())
 		os.Exit(1)
 	}
-	handler := handlers.NewHandler(repo)
+	if err := bookRepo.CreateTable(); err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
 
-	fmt.Printf("\nДобро пожаловать в библиотеку. Просьба не шуметь\n")
-	fmt.Printf("Выберите один из предложенных вариантов:\n")
+	authHandler := authHandlers.NewAuthHandler(authRepository)
+	bookHandler := handlers.NewHandler(bookRepo)
+
+	var currentUserID int
+	var currentUsername string
+
+authMenu:
+	for {
+		clearScreen()
+		fmt.Printf("\n🔐 Добро пожаловать в библиотеку!\n\n")
+		fmt.Printf("1 - Вход\n")
+		fmt.Printf("2 - Регистрация\n")
+		fmt.Printf("3 - Выход\n\n")
+		fmt.Print("Выберите действие: ")
+
+		choice := utils.GetInt("choice", false)
+
+		clearScreen()
+
+		switch choice {
+		case 1:
+			fmt.Printf("\n🔑 ВХОД В СИСТЕМУ\n\n")
+			fmt.Print("Имя пользователя: ")
+			username := utils.GetString(false)
+			fmt.Print("Пароль: ")
+			password := utils.GetString(false)
+
+			userID, err := authHandler.Login(username, password)
+			if err != nil {
+				fmt.Println(err.Error())
+				time.Sleep(2 * time.Second)
+				continue
+			}
+
+			currentUserID = userID
+			currentUsername = username
+			goto mainMenu
+
+		case 2:
+			fmt.Printf("\n📝 РЕГИСТРАЦИЯ\n\n")
+			fmt.Print("Имя пользователя (минимум 3 символа): ")
+			username := utils.GetString(false)
+			fmt.Print("Пароль (минимум 6 символов): ")
+			password := utils.GetString(false)
+
+			if err := authHandler.Register(username, password); err != nil {
+				fmt.Println(err.Error())
+				time.Sleep(2 * time.Second)
+				continue
+			}
+
+			time.Sleep(2 * time.Second)
+			continue
+
+		case 3:
+			fmt.Println("Всего доброго! 👋")
+			return
+
+		default:
+			fmt.Println("❌ Неверный выбор")
+			time.Sleep(1 * time.Second)
+			continue
+		}
+	}
+
+mainMenu:
+	fmt.Printf("\n🎉 Добро пожаловать, %s! Просьба не шуметь\n", currentUsername)
 
 	for {
+		clearScreen()
+
 		utils.ShowMenu()
 		numberOption := utils.ChooseOption()
 
-		// отчистка экрана
-		cmd := exec.Command("clear")
-		cmd.Stdout = os.Stdout
-		cmd.Run()
+		clearScreen()
 
 		switch numberOption {
 		case 1:
-			if err := handler.ShowAllBooks(); err != nil {
+			if err := bookHandler.ShowAllBooks(currentUserID); err != nil {
 				fmt.Println(err.Error())
+				time.Sleep(2 * time.Second)
 				continue
 			}
+			time.Sleep(5 * time.Second)
 		case 2:
 			fmt.Printf("🔍 Укажите название той книги, которая вас интересует\n")
 			fmt.Printf("\n")
 			title := utils.ChooseTitleBook()
-			if err := handler.ShowOneBook(title); err != nil {
+			if err := bookHandler.ShowOneBook(title, currentUserID); err != nil {
 				fmt.Println(err.Error())
+				time.Sleep(2 * time.Second)
 				continue
 			}
+			time.Sleep(3 * time.Second)
 		case 3:
 			fmt.Printf("\n✨-------------------------------------------✨\n")
 			fmt.Printf("✨ Этап добавления новой книги в библиотеку  ✨\n")
@@ -69,8 +146,9 @@ func main() {
 			fmt.Printf("✅ Цена успешно сохранена!\n\n")
 
 			newBook := models.NewBook(title, autor, year, price)
-			if err := handler.CreateBook(newBook); err != nil {
+			if err := bookHandler.CreateBook(newBook, currentUserID); err != nil {
 				fmt.Println(err.Error())
+				time.Sleep(2 * time.Second)
 				continue
 			}
 
@@ -80,13 +158,14 @@ func main() {
 			fmt.Print("🔍 Введите название той книги, которую хотите удалить из списка: ")
 			title := utils.GetString(false)
 
-			if err := handler.ShowOneBook(title); err != nil {
+			if err := bookHandler.ShowOneBook(title, currentUserID); err != nil {
 				fmt.Println(err.Error())
+				time.Sleep(2 * time.Second)
 				continue
 			}
-
-			if err := handler.DeleteBook(title); err != nil {
+			if err := bookHandler.DeleteBook(title, currentUserID); err != nil {
 				fmt.Println(err.Error())
+				time.Sleep(2 * time.Second)
 				continue
 			}
 		case 5:
@@ -94,8 +173,9 @@ func main() {
 			fmt.Print("Введите название той книги, которую хотите обновить: ")
 			title := utils.GetString(false)
 
-			if err := handler.ShowOneBook(title); err != nil {
+			if err := bookHandler.ShowOneBook(title, currentUserID); err != nil {
 				fmt.Println(err.Error())
+				time.Sleep(2 * time.Second)
 				continue
 			}
 
@@ -118,14 +198,21 @@ func main() {
 			fmt.Printf("✅ Цена успешно сохранена!\n\n")
 
 			updatedBook := models.NewBook(newTitle, newAutor, newYear, newPrice)
-			if err := handler.UpdateBook(title, updatedBook); err != nil {
+			if err := bookHandler.UpdateBook(title, updatedBook, currentUserID); err != nil {
 				fmt.Println(err.Error())
+				time.Sleep(2 * time.Second)
 				continue
 			}
 		case 6:
-			fmt.Println("Bye-bye 👋")
-			time.Sleep(3 * time.Second)
-			return
+			fmt.Println("До свидания, " + currentUsername + "! 👋")
+			time.Sleep(2 * time.Second)
+			goto authMenu
 		}
 	}
+}
+
+func clearScreen() {
+	cmd := exec.Command("clear")
+	cmd.Stdout = os.Stdout
+	cmd.Run()
 }

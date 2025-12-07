@@ -1,4 +1,3 @@
-// Package repository
 package repository
 
 import (
@@ -10,11 +9,11 @@ import (
 
 type BookRepository interface {
 	CreateTable() error
-	CreateBook(book models.Book) error
-	ShowAllBooks() (*sql.Rows, error)
-	ShowOneBook(title string) (*models.Book, error)
-	UpdateBook(title string, book models.Book) error
-	DeleteBook(title string) error
+	CreateBook(book models.Book, userID int) error
+	ShowAllBooks(userID int) (*sql.Rows, error)
+	ShowOneBook(title string, userID int) (*models.Book, error)
+	UpdateBook(title string, book models.Book, userID int) error
+	DeleteBook(title string, userID int) error
 }
 
 type bookRepository struct {
@@ -28,13 +27,16 @@ func NewBookRepo(db *sql.DB) BookRepository {
 func (br *bookRepository) CreateTable() error {
 	_, err := br.db.Exec(`
 		CREATE TABLE IF NOT EXISTS books (
-			id INTEGER PRIMARY KEY,
-			title TEXT NOT NULL,
-			author TEXT NOT NULL,
-			year INTEGER,
-			price INTEGER,
-			UNIQUE(title, author)
-		);`)
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		title TEXT NOT NULL,
+		author TEXT NOT NULL,
+		year INTEGER,
+		price INTEGER,
+		user_id INTEGER NOT NULL,
+		UNIQUE(title, author, user_id),
+		FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+		)`,
+	)
 
 	if err != nil {
 		return fmt.Errorf("❌ не удалось создать базу данных: %w", err)
@@ -43,22 +45,23 @@ func (br *bookRepository) CreateTable() error {
 	return nil
 }
 
-func (br *bookRepository) CreateBook(book models.Book) error {
+func (br *bookRepository) CreateBook(book models.Book, userID int) error {
 	_, err := br.db.Exec(
-		"INSERT INTO books (title, author, year, price) VALUES (?, ?, ?, ?)",
+		"INSERT INTO books (title, author, year, price, user_id) VALUES (?, ?, ?, ?, ?)",
 		book.Title,
 		book.Author,
 		book.Year,
 		book.Price,
+		userID,
 	)
 
 	return err
 }
 
-func (br *bookRepository) ShowAllBooks() (*sql.Rows, error) {
-	query := "SELECT * FROM books ORDER BY title ASC"
+func (br *bookRepository) ShowAllBooks(userID int) (*sql.Rows, error) {
+	query := "SELECT id, title, author, year, price, user_id FROM books WHERE user_id = ? ORDER BY title ASC"
 
-	rows, err := br.db.Query(query)
+	rows, err := br.db.Query(query, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -66,14 +69,18 @@ func (br *bookRepository) ShowAllBooks() (*sql.Rows, error) {
 	return rows, nil
 }
 
-func (br *bookRepository) ShowOneBook(title string) (*models.Book, error) {
+func (br *bookRepository) ShowOneBook(title string, userID int) (*models.Book, error) {
 	book := new(models.Book)
 
 	query := "%" + title + "%"
 
-	row := br.db.QueryRow("SELECT * FROM books WHERE title LIKE ?", query)
+	row := br.db.QueryRow(
+		"SELECT id, title, author, year, price, user_id FROM books WHERE title LIKE ? AND user_id = ?",
+		query,
+		userID,
+	)
 
-	err := row.Scan(&book.ID, &book.Title, &book.Author, &book.Year, &book.Price)
+	err := row.Scan(&book.ID, &book.Title, &book.Author, &book.Year, &book.Price, &book.UserID)
 
 	if err != nil {
 		return nil, err
@@ -82,7 +89,7 @@ func (br *bookRepository) ShowOneBook(title string) (*models.Book, error) {
 	return book, nil
 }
 
-func (br *bookRepository) UpdateBook(title string, book models.Book) error {
+func (br *bookRepository) UpdateBook(title string, book models.Book, userID int) error {
 	var updates []string
 	var args []interface{}
 
@@ -104,18 +111,21 @@ func (br *bookRepository) UpdateBook(title string, book models.Book) error {
 	}
 
 	if len(updates) == 0 {
-		return nil // нет полей для обновления
+		return nil
 	}
 
-	query := fmt.Sprintf("UPDATE books SET %s WHERE title = ?", strings.Join(updates, ", "))
-	args = append(args, title)
+	query := fmt.Sprintf(
+		"UPDATE books SET %s WHERE title = ? AND user_id = ?",
+		strings.Join(updates, ", "),
+	)
+	args = append(args, title, userID)
 
 	_, err := br.db.Exec(query, args...)
 	return err
 }
 
-func (br *bookRepository) DeleteBook(title string) error {
-	_, err := br.db.Exec("DELETE FROM books WHERE title = ?", title)
+func (br *bookRepository) DeleteBook(title string, userID int) error {
+	_, err := br.db.Exec("DELETE FROM books WHERE title = ? AND user_id = ?", title, userID)
 
 	return err
 }

@@ -1,4 +1,3 @@
-// Package handlers
 package handlers
 
 import (
@@ -20,8 +19,8 @@ func NewHandler(r repository.BookRepository) *bookHandler {
 	}
 }
 
-func (h *bookHandler) CreateBook(book models.Book) error {
-	if err := h.r.CreateBook(book); err != nil {
+func (h *bookHandler) CreateBook(book models.Book, userID int) error {
+	if err := h.r.CreateBook(book, userID); err != nil {
 		if strings.Contains(err.Error(), "UNIQUE constraint failed") {
 			return fmt.Errorf("❌ такая книга уже существует: %w", err)
 		}
@@ -33,8 +32,8 @@ func (h *bookHandler) CreateBook(book models.Book) error {
 	return nil
 }
 
-func (h *bookHandler) ShowAllBooks() error {
-	rows, err := h.r.ShowAllBooks()
+func (h *bookHandler) ShowAllBooks(userID int) error {
+	rows, err := h.r.ShowAllBooks(userID)
 	if err != nil {
 		return fmt.Errorf("❌ ошибка при запросе к бд: %w", err)
 	}
@@ -45,7 +44,7 @@ func (h *bookHandler) ShowAllBooks() error {
 		k++
 		book := new(models.Book)
 
-		err := rows.Scan(&book.ID, &book.Title, &book.Author, &book.Year, &book.Price)
+		err := rows.Scan(&book.ID, &book.Title, &book.Author, &book.Year, &book.Price, &book.UserID)
 		if err != nil {
 			return fmt.Errorf("❌ ошибка при чтении записи из бд: %w", err)
 		}
@@ -59,8 +58,8 @@ func (h *bookHandler) ShowAllBooks() error {
 	return nil
 }
 
-func (h *bookHandler) ShowOneBook(title string) error {
-	book, err := h.r.ShowOneBook(title)
+func (h *bookHandler) ShowOneBook(title string, userID int) error {
+	book, err := h.r.ShowOneBook(title, userID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return fmt.Errorf("❌🔍 книга с таким названием не найдена\n\n")
@@ -73,8 +72,8 @@ func (h *bookHandler) ShowOneBook(title string) error {
 	return nil
 }
 
-func (h *bookHandler) UpdateBook(title string, book models.Book) error {
-	if err := h.r.UpdateBook(title, book); err != nil {
+func (h *bookHandler) UpdateBook(title string, book models.Book, userID int) error {
+	if err := h.r.UpdateBook(title, book, userID); err != nil {
 		return fmt.Errorf("❌ не удалось обновить книгу: %w", err)
 	}
 
@@ -82,8 +81,8 @@ func (h *bookHandler) UpdateBook(title string, book models.Book) error {
 	return nil
 }
 
-func (h *bookHandler) DeleteBook(title string) error {
-	if err := h.r.DeleteBook(title); err != nil {
+func (h *bookHandler) DeleteBook(title string, userID int) error {
+	if err := h.r.DeleteBook(title, userID); err != nil {
 		return fmt.Errorf("❌ не удалось удалить книгу: %w", err)
 	}
 
@@ -97,7 +96,7 @@ func localShow(book models.Book) {
 	fmt.Printf("+-------------------+\n")
 	fmt.Printf("| 📝 Название: %s\n", book.Title)
 	fmt.Printf("| ✍️ Автор: %s\n", book.Author)
-	fmt.Printf("| 🗓️ Год издания: %d\n", book.Year)
-	fmt.Printf("| 💰 Цена (в рублях): %d\n\n\n", book.Price)
+	fmt.Printf("| 📆 Год издания: %d\n", book.Year)
+	fmt.Printf("| 💰 Цена (в рублях): %d\n", book.Price)
 	fmt.Printf("📚-------------------+\n")
 }

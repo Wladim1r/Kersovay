@@ -12,6 +12,7 @@ import (
 
 const (
 	WithoutChange = "оставьте поле пустым, если не хотите ничего менять"
+	MinimalYear   = 800
 )
 
 func GetInt(someone string, empty bool) int {
@@ -39,9 +40,15 @@ func GetInt(someone string, empty bool) int {
 			continue
 		}
 
-		if someone == "year" && number > time.Now().Year() {
-			fmt.Printf("Указанный вами год превышает текущий\nПопробуйте еще раз: ")
-			continue
+		if someone == "year" {
+			if number < MinimalYear {
+				fmt.Printf("Слишком старая книга, наша библиотека такие не принимает 🤷")
+				continue
+			}
+			if number > time.Now().Year() {
+				fmt.Printf("Указанный вами год превышает текущий\nПопробуйте еще раз: ")
+				continue
+			}
 		}
 
 		return number
