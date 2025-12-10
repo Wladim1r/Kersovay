@@ -25,7 +25,7 @@ func (h *AuthHandler) Register(username, password string) error {
 		return fmt.Errorf("❌ имя пользователя должно содержать минимум 3 символа")
 	}
 
-	if len(password) < 6 {
+	if len(password) < 5 {
 		return fmt.Errorf("❌ пароль должен содержать минимум 6 символов")
 	}
 

@@ -5,7 +5,7 @@ type User struct {
 	ID       int    `gorm:"primaryKey"`
 	Username string `gorm:"unique;not null"`
 	Password string
-	Coins    []Book `gorm:"foreignKey:UserID"`
+	Books    []Book `gorm:"foreignKey:UserID"`
 }
 
 type Book struct {

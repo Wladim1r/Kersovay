@@ -52,9 +52,9 @@ authMenu:
 		switch choice {
 		case 1:
 			fmt.Printf("\n🔑 ВХОД В СИСТЕМУ\n\n")
-			fmt.Print("Имя пользователя: ")
+			fmt.Print("Имя пользователя (минимум 3 символа): ")
 			username := utils.GetString(false)
-			fmt.Print("Пароль: ")
+			fmt.Print("Пароль (минимум 5 символов): ")
 			password := utils.GetString(false)
 
 			userID, err := authHandler.Login(username, password)
