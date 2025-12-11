@@ -3,6 +3,7 @@ package repository
 import (
 	"database/sql"
 	"fmt"
+	"library/internal/models"
 )
 
 type AuthRepository interface {
@@ -10,14 +11,47 @@ type AuthRepository interface {
 	CreateUser(username, password string) error
 	GetUserByUsername(username string) (int, string, error)
 	UserExists(username string) (bool, error)
+	GetAllUsers() ([]models.User, error)
+	TruncateUsers() error
 }
 
 type authRepository struct {
 	db *sql.DB
 }
 
+func (ar *authRepository) TruncateUsers() error {
+	_, err := ar.db.Exec("DELETE FROM users")
+	if err != nil {
+		return err
+	}
+	_, err = ar.db.Exec("DELETE FROM sqlite_sequence WHERE name='users'")
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func NewAuthRepo(db *sql.DB) AuthRepository {
 	return &authRepository{db: db}
+}
+
+func (ar *authRepository) GetAllUsers() ([]models.User, error) {
+	rows, err := ar.db.Query("SELECT id, username, password FROM users")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var users []models.User
+	for rows.Next() {
+		var user models.User
+		if err := rows.Scan(&user.ID, &user.Username, &user.Password); err != nil {
+			return nil, err
+		}
+		users = append(users, user)
+	}
+
+	return users, nil
 }
 
 func (ar *authRepository) CreateUserTable() error {

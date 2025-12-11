@@ -7,11 +7,11 @@ import (
 	"library/internal/books/handlers"
 	"library/internal/books/repository"
 	"library/internal/db"
+	"library/internal/migration"
 	"library/internal/models"
 	"library/utils"
 	"os"
 	"os/exec"
-	"time"
 )
 
 func main() {
@@ -39,28 +39,23 @@ func main() {
 authMenu:
 	for {
 		clearScreen()
-		fmt.Printf("\n🔐 Добро пожаловать в библиотеку!\n\n")
-		fmt.Printf("1 - Вход\n")
-		fmt.Printf("2 - Регистрация\n")
-		fmt.Printf("3 - Выход\n\n")
-		fmt.Print("Выберите действие: ")
-
-		choice := utils.GetInt("choice", false)
+		utils.ShowMainMenu()
+		choice := utils.GetMenuItem(5)
 
 		clearScreen()
 
 		switch choice {
 		case 1:
 			fmt.Printf("\n🔑 ВХОД В СИСТЕМУ\n\n")
-			fmt.Print("Имя пользователя (минимум 3 символа): ")
+			fmt.Print("Имя пользователя: ")
 			username := utils.GetString(false)
-			fmt.Print("Пароль (минимум 5 символов): ")
+			fmt.Print("Пароль: ")
 			password := utils.GetString(false)
 
 			userID, err := authHandler.Login(username, password)
 			if err != nil {
 				fmt.Println(err.Error())
-				time.Sleep(2 * time.Second)
+				utils.Wait()
 				continue
 			}
 
@@ -70,27 +65,43 @@ authMenu:
 
 		case 2:
 			fmt.Printf("\n📝 РЕГИСТРАЦИЯ\n\n")
-			fmt.Print("Имя пользователя: ")
+			fmt.Print("Имя пользователя (минимум 3 символа): ")
 			username := utils.GetString(false)
-			fmt.Print("Пароль: ")
+			fmt.Print("Пароль (минимум 5 символов): ")
 			password := utils.GetString(false)
 
 			if err := authHandler.Register(username, password); err != nil {
 				fmt.Println(err.Error())
-				time.Sleep(2 * time.Second)
+				utils.Wait()
 				continue
 			}
 
-			time.Sleep(2 * time.Second)
+			utils.Wait()
 			continue
 
 		case 3:
 			fmt.Println("Всего доброго! 👋")
 			return
+		case 4:
+			if err := migration.NewMigration(authRepository, bookRepo).ExportData(); err != nil {
+				fmt.Println(err.Error())
+				utils.Wait()
+				continue
+			}
+			fmt.Println("Данные успешно экспортированы в migration.json")
+			utils.Wait()
+		case 5:
+			if err := migration.NewMigration(authRepository, bookRepo).ImportData(); err != nil {
+				fmt.Println(err.Error())
+				utils.Wait()
+				continue
+			}
+			fmt.Println("Данные успешно импортированы из migration.json")
+			utils.Wait()
 
 		default:
 			fmt.Println("❌ Неверный выбор")
-			time.Sleep(1 * time.Second)
+			utils.Wait()
 			continue
 		}
 	}
@@ -101,8 +112,8 @@ mainMenu:
 	for {
 		clearScreen()
 
-		utils.ShowMenu()
-		numberOption := utils.ChooseOption()
+		utils.ShowBookMenu()
+		numberOption := utils.GetMenuItem(6)
 
 		clearScreen()
 
@@ -110,20 +121,20 @@ mainMenu:
 		case 1:
 			if err := bookHandler.ShowAllBooks(currentUserID); err != nil {
 				fmt.Println(err.Error())
-				time.Sleep(2 * time.Second)
+				utils.Wait()
 				continue
 			}
-			time.Sleep(5 * time.Second)
+			utils.Wait()
 		case 2:
 			fmt.Printf("🔍 Укажите название той книги, которая вас интересует\n")
 			fmt.Printf("\n")
 			title := utils.ChooseTitleBook()
 			if err := bookHandler.ShowOneBook(title, currentUserID); err != nil {
 				fmt.Println(err.Error())
-				time.Sleep(2 * time.Second)
+				utils.Wait()
 				continue
 			}
-			time.Sleep(3 * time.Second)
+			utils.Wait()
 		case 3:
 			fmt.Printf("\n✨-------------------------------------------✨\n")
 			fmt.Printf("✨ Этап добавления новой книги в библиотеку  ✨\n")
@@ -131,24 +142,20 @@ mainMenu:
 
 			fmt.Printf("➡️ Введите название книги: ")
 			title := utils.GetString(false)
-			fmt.Printf("✅ Название успешно сохранено!\n\n")
 
 			fmt.Printf("➡️ Введите имя автора книги: ")
 			autor := utils.GetString(false)
-			fmt.Printf("✅ Автор книги успешно сохранен!\n\n")
 
 			fmt.Printf("➡️ Введите год издания книги: ")
 			year := utils.GetInt("year", false)
-			fmt.Printf("✅ Дата успешно сохранена!\n\n")
 
 			fmt.Printf("➡️ Введите цену книги (в рублях): ")
 			price := utils.GetInt("price", false)
-			fmt.Printf("✅ Цена успешно сохранена!\n\n")
 
 			newBook := models.NewBook(title, autor, year, price)
 			if err := bookHandler.CreateBook(newBook, currentUserID); err != nil {
 				fmt.Println(err.Error())
-				time.Sleep(2 * time.Second)
+				utils.Wait()
 				continue
 			}
 
@@ -160,12 +167,12 @@ mainMenu:
 
 			if err := bookHandler.ShowOneBook(title, currentUserID); err != nil {
 				fmt.Println(err.Error())
-				time.Sleep(2 * time.Second)
+				utils.Wait()
 				continue
 			}
 			if err := bookHandler.DeleteBook(title, currentUserID); err != nil {
 				fmt.Println(err.Error())
-				time.Sleep(2 * time.Second)
+				utils.Wait()
 				continue
 			}
 		case 5:
@@ -175,7 +182,7 @@ mainMenu:
 
 			if err := bookHandler.ShowOneBook(title, currentUserID); err != nil {
 				fmt.Println(err.Error())
-				time.Sleep(2 * time.Second)
+				utils.Wait()
 				continue
 			}
 
@@ -183,29 +190,25 @@ mainMenu:
 
 			fmt.Printf("➡️ Введите новое название книги\n(%s): ", withoutChange)
 			newTitle := utils.GetString(true)
-			fmt.Printf("✅ Название успешно сохранено!\n\n")
 
 			fmt.Printf("➡️ Введите нового имя автора книги\n(%s): ", withoutChange)
 			newAutor := utils.GetString(true)
-			fmt.Printf("✅ Автор книги успешно сохранен!\n\n")
 
 			fmt.Printf("➡️ Введите новый год издания книги\n(%s): ", withoutChange)
 			newYear := utils.GetInt("year", true)
-			fmt.Printf("✅ Дата успешно сохранена!\n\n")
 
 			fmt.Printf("➡️ Введите новую цену книги (в рублях)\n(%s): ", withoutChange)
 			newPrice := utils.GetInt("price", true)
-			fmt.Printf("✅ Цена успешно сохранена!\n\n")
 
 			updatedBook := models.NewBook(newTitle, newAutor, newYear, newPrice)
 			if err := bookHandler.UpdateBook(title, updatedBook, currentUserID); err != nil {
 				fmt.Println(err.Error())
-				time.Sleep(2 * time.Second)
+				utils.Wait()
 				continue
 			}
 		case 6:
 			fmt.Println("До свидания, " + currentUsername + "! 👋")
-			time.Sleep(2 * time.Second)
+			utils.Wait()
 			goto authMenu
 		}
 	}

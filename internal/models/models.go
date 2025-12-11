@@ -2,21 +2,20 @@
 package models
 
 type User struct {
-	ID       int    `gorm:"primaryKey"`
-	Username string `gorm:"unique;not null"`
-	Password string
-	Books    []Book `gorm:"foreignKey:UserID"`
+	ID       int    `json:"-"`
+	Username string `json:"username"`
+	Password string `json:"password"`
+	Books    []Book `json:"books"`
 }
 
 type Book struct {
-	ID     uint `gorm:"primaryKey"`
-	Title  string
-	Author string
-	Year   int
-	Price  int
-
-	UserID uint
-	User   User `gorm:"constraint:OnDelete:CASCADE;"`
+	ID     uint   `json:"-"`
+	Title  string `json:"title"`
+	Author string `json:"author"`
+	Year   int    `json:"year"`
+	Price  int    `json:"price"`
+	UserID uint   `json:"-"`
+	User   User   `json:"-"`
 }
 
 func NewBook(title, author string, year, price int) Book {

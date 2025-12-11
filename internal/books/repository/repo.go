@@ -14,10 +14,23 @@ type BookRepository interface {
 	ShowOneBook(title string, userID int) (*models.Book, error)
 	UpdateBook(title string, book models.Book, userID int) error
 	DeleteBook(title string, userID int) error
+	TruncateBooks() error
 }
 
 type bookRepository struct {
 	db *sql.DB
+}
+
+func (br *bookRepository) TruncateBooks() error {
+	_, err := br.db.Exec("DELETE FROM books")
+	if err != nil {
+		return err
+	}
+	_, err = br.db.Exec("DELETE FROM sqlite_sequence WHERE name='books'")
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func NewBookRepo(db *sql.DB) BookRepository {

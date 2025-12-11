@@ -10,7 +10,20 @@ import (
 
 const NewLine = '\n'
 
-func ShowMenu() {
+func ShowMainMenu() {
+	fmt.Printf("+--------------------------------------------------+\n")
+	fmt.Printf("|             -+-       ВХОД       -+-             |\n")
+	fmt.Printf("+--------------------------------------------------+\n")
+	fmt.Printf("| 🔐 1 - Вход                                      |\n")
+	fmt.Printf("| 📝 2 - Регистрация                               |\n")
+	fmt.Printf("| 🚪 3 - Выход                                     |\n")
+	fmt.Printf("|                                                  |\n")
+	fmt.Printf("| 📤 4 - экспорт данных в json                     |\n")
+	fmt.Printf("| 📥 5 - импорт данных из json                     |\n")
+	fmt.Printf("+--------------------------------------------------+\n\n")
+}
+
+func ShowBookMenu() {
 	fmt.Printf("+--------------------------------------------------+\n")
 	fmt.Printf("|             -+-       МЕНЮ       -+-             |\n")
 	fmt.Printf("+--------------------------------------------------+\n")
@@ -23,11 +36,11 @@ func ShowMenu() {
 	fmt.Printf("+--------------------------------------------------+\n\n")
 }
 
-func ChooseOption() int {
+func GetMenuItem(max int) int {
 	var numberOption int
 
 	for {
-		fmt.Print("Поле для ввода действия над библиотекой: ")
+		fmt.Print("Поле для ввода действия: ")
 
 		ui := bufio.NewReader(os.Stdin)
 		str, err := ui.ReadString(NewLine)
@@ -49,7 +62,7 @@ func ChooseOption() int {
 			continue
 		}
 
-		if numberOption > 6 {
+		if numberOption > max {
 			fmt.Printf("Число слишком большое\n\n")
 			continue
 		}
